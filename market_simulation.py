@@ -287,7 +287,7 @@ class MarketSimulator:
 
             # Does cursor reach new snapshot ?
             if len(snapshot_timestamps) > 0 and order_book_datetime > snapshot_timestamps.min():
-                snapshot_timestamps.pop(0)
+                snapshot_timestamps.pop(snapshot_timestamps.index[0])
                 truncate_order_book()
 
             price = row.get('price')
