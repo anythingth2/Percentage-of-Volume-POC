@@ -13,16 +13,21 @@ class PoVJobExecutor:
 
     def query_single_job(self) -> Dict:
         query = '''
+            WITH cte AS ( 
             SELECT id,
                     algorithm,
                     param, 
                     job_execution_start, 
                     status,
-                    load_dt
+                    load_dt,
+                    ROW_NUMBER() OVER (ORDER BY RAND()) AS `row_number`
             FROM `trading_terminal_poc.job_inventory`
             WHERE algorithm = "PoV" 
-                   AND `status` = "CREATED"
-            LIMIT 1
+                    AND `status` = "CREATED"
+            )
+            SELECT * EXCEPT (`row_number`)
+            FROM cte
+            WHERE `row_number` = 1
         '''
         job = bq.query(query).to_dataframe().iloc[0].to_dict()
         return job
