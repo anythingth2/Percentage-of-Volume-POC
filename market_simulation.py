@@ -61,13 +61,16 @@ def find_initial_snapshot_datetime(symbol: str,
     else:
         raise NotImplementedError
 
-def query_raw_l2_order_book(symbol: str,
+def query_l2_order_book(symbol: str,
 						start_datetime: datetime.datetime, 
 						end_datetime: datetime.datetime) -> bigquery.table.RowIterator:
 	query = '''
 	WITH l2_order_book AS (
-		SELECT *
-		FROM `trading_terminal_poc.coinbase_raw_l2_order_book`
+        SELECT `timestamp`,
+                side,
+                size,
+                price
+		FROM `trading_terminal_poc.coinbase_l2_order_book`
 		WHERE `symbol` = @symbol AND
 				`timestamp` BETWEEN @start_datetime AND @end_datetime 
 	),
@@ -250,7 +253,7 @@ class MarketSimulator:
     def pre_simulate(self):
 
         initial_snapshot_datetime = find_initial_snapshot_datetime(self.symbol, self.start_datetime)
-        order_book_result = query_raw_l2_order_book(self.symbol, initial_snapshot_datetime, self.start_datetime)
+        order_book_result = query_l2_order_book(self.symbol, initial_snapshot_datetime, self.start_datetime)
 
         # Iterate over all record of order book in either same timestamp and next timestamp
         for row in tqdm.tqdm(order_book_result, total=order_book_result.total_rows):
@@ -269,7 +272,7 @@ class MarketSimulator:
     def simulate(self) -> Iterable[datetime.datetime]:
 
         snapshot_timestamps = query_snapshot_timestamp(self.symbol, self.start_datetime, self.end_datetime)
-        order_book_result = query_raw_l2_order_book(self.symbol, self.start_datetime, self.end_datetime)
+        order_book_result = query_l2_order_book(self.symbol, self.start_datetime, self.end_datetime)
 
         current_datetime = None
         # Iterate over all record of order book in either same timestamp and next timestamp
