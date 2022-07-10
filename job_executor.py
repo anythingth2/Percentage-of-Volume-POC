@@ -22,7 +22,7 @@ class PoVJobExecutor:
                     load_dt,
                     ROW_NUMBER() OVER (ORDER BY RAND()) AS `row_number`
             FROM `trading_terminal_poc.job_inventory`
-            WHERE algorithm = "PoV" 
+            WHERE algorithm = "PoV_experiment_v2" 
                     AND `status` = "CREATED"
             )
             SELECT * EXCEPT (`row_number`)
@@ -108,13 +108,23 @@ class PoVJobExecutor:
                 job['status'] = 'SUCCESS'
             except Exception as e:
                 job['status'] = 'FAILED'
+
+                result = {
+                    'symbol': param['symbol'],
+                    'percentage': param['percentage'],
+                    'acceptable_slippage': param['acceptable_slippage'],
+                    'delay': param['delay'],
+                    'side': param['side'],
+                    'target_order_amount': param['target_order_amount'],
+                    'success': False
+                }
                 result['remark'] = str(e)
             finally:
                 job['job_execution_end'] = datetime.datetime.now().isoformat()
 
                 self.update_after_process_job(job)
-
-                self.insert_job_result(job, result)
+                if result is not None:
+                    self.insert_job_result(job, result)
             
 executor = PoVJobExecutor()
 executor.execute()
